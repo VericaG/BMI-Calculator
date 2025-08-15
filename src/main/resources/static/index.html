@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BMI Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            width: 350px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 0.6rem;
+            margin-top: 0.3rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-size: 1rem;
+        }
+        button {
+            margin-top: 1.5rem;
+            background: #ff7eb3;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #ff7eb3;
+        }
+        .result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .result-line {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+        }
+        .result-bmi {
+            font-size: 1.5rem;
+        }
+        .result-category {
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💪 BMI Calculator</h1>
+    <form id="bmiForm">
+        <label>Height (m):</label>
+        <input type="number" step="0.01" name="height" required>
+
+        <label>Weight (kg):</label>
+        <input type="number" step="0.1" name="weight" required>
+
+        <label>Age:</label>
+        <input type="number" name="age" required>
+
+        <label>Unit:</label>
+        <select name="unit">
+            <option value="metric">Metric</option>
+            <option value="imperial">Imperial</option>
+        </select>
+
+        <button type="submit">Calculate</button>
+    </form>
+    <div class="result" id="result">
+        Enter your data and press Calculate
+    </div>
+</div>
+
+<script>
+    document.getElementById("bmiForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const height = parseFloat(this.height.value);
+        const weight = parseFloat(this.weight.value);
+        const age = parseInt(this.age.value);
+        const unit = this.unit.value;
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "⏳ Calculating...";
+        resultDiv.style.color = "#fff";
+
+        try {
+            const res = await fetch("/api/bmi", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ height, weight, age, unit })
+            });
+
+            if (!res.ok) {
+                resultDiv.innerHTML = "❌ " + (await res.text());
+                resultDiv.style.color = "#ffbaba";
+                return;
+            }
+
+            const data = await res.json();
+            let categoryColor;
+            switch (data.category) {
+                case "UNDERWEIGHT":
+                    categoryColor = "#ffeb3b";
+                    break;
+                case "NORMAL":
+                    categoryColor = "#4caf50";
+                    break;
+                case "OVERWEIGHT":
+                    categoryColor = "#f44336";
+                    break;
+                default:
+                    categoryColor = "#fff";
+            }
+
+            resultDiv.innerHTML = `
+                <div class="result-line">💪 BMI: <span class="result-bmi">${data.bmi}</span></div>
+                <div class="result-line">📊 Category: <span class="result-category">${data.category}</span></div>
+            `;
+            resultDiv.style.color = categoryColor;
+        } catch (err) {
+            resultDiv.innerHTML = "⚠️ Error: " + err.message;
+            resultDiv.style.color = "#ffbaba";
+        }
+    });
+</script>
+</body>
+</html>
